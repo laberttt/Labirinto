@@ -19,4 +19,4 @@ p = maze.get_init_pos_player()
 
 maze.mov_player(p)
 
-
+maze.solve_maze()

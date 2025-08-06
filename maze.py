@@ -3,6 +3,7 @@ import numpy as np
 import csv
 import random
 import threading
+from collections import deque
 
 class Maze:
 
@@ -14,7 +15,7 @@ class Maze:
     O labirinto em memória é representado por uma matriz inteira, indicando para cada
     quadrado se o mesmo é uma parede, um corredor, o prêmio ou o jogador.
     '''
-    
+
     WALL = 0
     HALL = 1
     PLAYER = 2
@@ -28,8 +29,7 @@ class Maze:
         self.M = None #matriz que representa o labirinto
         pygame.init()
 
-    
-    def load_from_csv(self, file_path : str):
+    def load_from_csv(self, file_path: str):
         '''
         Função para carregar a matriz de um arquivo CSV  
 
@@ -64,7 +64,7 @@ class Maze:
             if self.M[posx, posy] == Maze.HALL:
                 self.M[posx, posy] = Maze.PRIZE
                 break
-
+    
     def find_prize(self, pos : (int, int)) -> bool:
         '''
         O tabuleiro é dividio 
@@ -127,7 +127,7 @@ class Maze:
         if self.M[pos[0], pos[1]] == Maze.HALL:
             self.M[pos[0], pos[1]] = Maze.PLAYER
         
-
+    
     def get_init_pos_player(self) -> (int, int):
         '''
         Indica a posição inicial do jogador dentro do labirinto que foi gerada 
@@ -140,7 +140,36 @@ class Maze:
 
         '''
         return self.init_pos_player
+    
+    def solve_maze(self) -> bool:
+        stack = deque() #pilha para armazenar as posições a serem visitadas
+        visited = set() #conjunto para armazenar as posições já visitadas
+        start_pos = self.get_init_pos_player() #posição inicial do jogador
+        stack.append(start_pos) #adiciona a posição inicial na pilha
+        
+        while stack:
+            current_pos = stack.pop() #retira a posição atual da pilha
             
+            if self.find_prize(current_pos): #se a posição atual contém o prêmio
+                print("Caminho encontrado!") #imprime mensagem
+                return True
+            
+            if current_pos in visited: #se a posição atual já foi visitada
+                continue
+            
+            visited.add(current_pos) #adiciona a posição atual no conjunto de visitados
+            self.mov_player(current_pos) #move o jogador para a posição atual
+            
+            x, y = current_pos #separa as coordenadas x e y da posição atual
+            
+            for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]: #para cada direção
+                next_pos = (x + dx, y + dy) #calcula a próxima posição
+                if next_pos not in visited and self.is_free(next_pos): #se a próxima posição não foi visitada e é livre
+                    stack.append(next_pos) #adiciona a próxima posição na pilha
+        
+        print("Nenhum caminho encontrado.")
+        return False #se a pilha estiver vazia, não há caminho para o prêmio
+    
     def run(self):
         '''
         Thread responsável pela atualização da visualização do labirinto.
@@ -160,26 +189,29 @@ class Maze:
         width, height = cols * cell_size, rows * cell_size
         screen = pygame.display.set_mode((width, height))
         pygame.display.set_caption("Labirinto")
-    
+
         # Cores
         BLACK = (0, 0, 0)
         GRAY = (192, 192, 192)
         BLUE = (0, 0, 255)
         GOLD = (255, 215, 0)
-    
+
         running = True
         while running:
+            if not pygame.display.get_init():
+                break
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
                     pygame.quit()
-    
+
             screen.fill(BLACK)
-    
+
             # Desenhar o labirinto
             for y in range(rows):
                 for x in range(cols):
-                    if self.M[y, x] ==  Maze.WALL:
+                    if self.M[y, x] == Maze.WALL:
                         color = BLACK
                     elif self.M[y, x] == Maze.HALL:
                         color = GRAY
@@ -187,7 +219,7 @@ class Maze:
                         color = BLUE
                     elif self.M[y, x] == Maze.PRIZE:
                         color = GOLD
-                       
+                    
                     pygame.draw.rect(screen, color, (x * cell_size, y * cell_size, cell_size, cell_size))
-    
+
             pygame.display.flip()
