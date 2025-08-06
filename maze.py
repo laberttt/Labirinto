@@ -4,6 +4,7 @@ import csv
 import random
 import threading
 from collections import deque
+from time import sleep
 
 class Maze:
 
@@ -159,6 +160,7 @@ class Maze:
             
             visited.add(current_pos) #adiciona a posição atual no conjunto de visitados
             self.mov_player(current_pos) #move o jogador para a posição atual
+            sleep(0.1) #espera um pouco para a visualização
             
             x, y = current_pos #separa as coordenadas x e y da posição atual
             
